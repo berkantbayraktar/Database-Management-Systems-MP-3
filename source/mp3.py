@@ -75,8 +75,56 @@ def sign_up(conn, email, password, first_name, last_name, plan_id):
 
 
 def sign_in(conn, email, password):
-    # TODO: Implement this function
-    return None, USER_SIGNIN_FAILED
+    #cursor
+    cur = conn.cursor()
+
+    #execute query
+    try:
+        cur.execute("SELECT * FROM Customer WHERE email = %s and password = %s",(email,password))
+        query = cur.fetchone()
+    except:
+        return (None, USER_SIGNIN_FAILED)
+
+    #get attributs
+
+    if query == None: # if user is not found
+        return None, USER_SIGNIN_FAILED
+    else: # if user is found
+        try:
+            customer_id = query[0]
+            email = query[1]
+            name = query[3]
+            surname = query[4]
+            current_session_count = query[5]
+            plan_id = query[6]
+        except:
+            return (None, USER_SIGNIN_FAILED)
+
+        #execute query
+        try:
+            cur.execute("SELECT * FROM Plan WHERE plan_id = %s",[plan_id])
+            query = cur.fetchone()
+        except:
+            return (None, USER_SIGNIN_FAILED)
+
+        #get attributs
+        try:
+            max_parallel_sessions = query[3]
+        except:
+            return (None, USER_SIGNIN_FAILED)
+
+        if(current_session_count < max_parallel_sessions):
+            #create customer object
+            customer = Customer(customer_id = customer_id, email = email, first_name = name , last_name = surname,session_count = current_session_count+1,plan_id = plan_id)
+            try:
+                cur.execute("UPDATE Customer SET session_count = %s WHERE customer_id = %s",(current_session_count+1,customer_id))
+                conn.commit()
+                return (customer,CMD_EXECUTION_SUCCESS)
+            except:
+                return (None, USER_SIGNIN_FAILED)
+            
+        else:
+            return (None, USER_ALL_SESSIONS_ARE_USED)
 
 
 """
