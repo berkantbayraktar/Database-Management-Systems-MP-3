@@ -271,8 +271,43 @@ def watched_movies(conn, customer, movie_ids):
 
 
 def subscribe(conn, customer, plan_id):
-    # TODO: Implement this function
-    return None, CMD_EXECUTION_FAILED
+    #cursor
+    cur = conn.cursor()
+
+    try: 
+        cur.execute("SELECT * FROM Plan WHERE plan_id= %s",[customer.plan_id])
+        query = cur.fetchone()
+    except: 
+        conn.rollback()
+        return None, CMD_EXECUTION_FAILED
+
+    try:
+        old_max_parallel_sessions = query[3]
+    except:
+        return None, CMD_EXECUTION_FAILED
+
+    
+    try: 
+        cur.execute("SELECT * FROM Plan WHERE plan_id= %s",[plan_id])
+        query = cur.fetchone()
+        new_max_parallel_sessions = query[3]
+    except: 
+        conn.rollback()
+        return None, SUBSCRIBE_PLAN_NOT_FOUND
+
+    if(old_max_parallel_sessions <= new_max_parallel_sessions):
+        customer = Customer(customer_id = customer.customer_id, email = customer.email, 
+        first_name = customer.first_name, last_name = customer.last_name, session_count = customer.session_count,plan_id = plan_id)
+        try:
+            cur.execute("UPDATE Customer SET plan_id = %s WHERE customer_id = %s",(plan_id, customer.customer_id))
+            conn.commit()
+            cur.close()
+            return customer, CMD_EXECUTION_SUCCESS
+        except:
+            conn.rollback()
+            return None, CMD_EXECUTION_FAILED
+    else:
+        return None, SUBSCRIBE_MAX_PARALLEL_SESSIONS_UNAVAILABLE
 
 """
     Searches for movies with given search_text.
