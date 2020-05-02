@@ -83,7 +83,7 @@ def sign_in(conn, email, password):
         cur.execute("SELECT * FROM Customer WHERE email = %s and password = %s",(email,password))
         query = cur.fetchone()
     except:
-        return (None, USER_SIGNIN_FAILED)
+        return None, USER_SIGNIN_FAILED
 
     #get attributs
 
@@ -98,20 +98,20 @@ def sign_in(conn, email, password):
             current_session_count = query[5]
             plan_id = query[6]
         except:
-            return (None, USER_SIGNIN_FAILED)
+            return None, USER_SIGNIN_FAILED
 
         #execute query
         try:
             cur.execute("SELECT * FROM Plan WHERE plan_id = %s",[plan_id])
             query = cur.fetchone()
         except:
-            return (None, USER_SIGNIN_FAILED)
+            return None, USER_SIGNIN_FAILED
 
         #get attributs
         try:
             max_parallel_sessions = query[3]
         except:
-            return (None, USER_SIGNIN_FAILED)
+            return None, USER_SIGNIN_FAILED
 
         if(current_session_count < max_parallel_sessions):
             #create customer object
@@ -119,12 +119,13 @@ def sign_in(conn, email, password):
             try:
                 cur.execute("UPDATE Customer SET session_count = %s WHERE customer_id = %s",(current_session_count+1,customer_id))
                 conn.commit()
-                return (customer,CMD_EXECUTION_SUCCESS)
+                cur.close()
+                return customer,CMD_EXECUTION_SUCCESS
             except:
-                return (None, USER_SIGNIN_FAILED)
+                return None, USER_SIGNIN_FAILED
             
         else:
-            return (None, USER_ALL_SESSIONS_ARE_USED)
+            return None, USER_ALL_SESSIONS_ARE_USED
 
 
 """
@@ -137,8 +138,18 @@ def sign_in(conn, email, password):
 
 
 def sign_out(conn, customer):
-    # TODO: Implement this function
-    return False, CMD_EXECUTION_FAILED
+    #cursor
+    cur = conn.cursor()
+    if(customer.session_count > 0):
+        try:
+            cur.execute("UPDATE Customer SET session_count = %s WHERE customer_id = %s",(customer.session_count - 1, customer.customer_id))
+            conn.commit()
+            cur.close()
+            return True, CMD_EXECUTION_SUCCESS
+        except:
+            return False, CMD_EXECUTION_FAILED
+    else:
+        return False, CMD_EXECUTION_FAILED
 
 
 """
