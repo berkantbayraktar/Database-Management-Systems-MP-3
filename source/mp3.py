@@ -60,8 +60,23 @@ def help():
 
 
 def sign_up(conn, email, password, first_name, last_name, plan_id):
-    # TODO: Implement this function
-    return False, CMD_EXECUTION_FAILED
+    #cursor
+    cur = conn.cursor()
+
+    try:
+        cur.execute("INSERT INTO Customer(email,password,first_name,last_name,session_count,plan_id) VALUES (%s,%s,%s,%s,0,%s)",
+        (email,password,first_name,last_name,plan_id))
+            
+        conn.commit()
+        cur.close()
+
+        return True, CMD_EXECUTION_SUCCESS 
+
+    except:
+        conn.rollback()
+        return False, CMD_EXECUTION_FAILED
+
+
 
 
 """
@@ -122,6 +137,7 @@ def sign_in(conn, email, password):
                 cur.close()
                 return customer,CMD_EXECUTION_SUCCESS
             except:
+                conn.rollback()
                 return None, USER_SIGNIN_FAILED
             
         else:
@@ -147,6 +163,7 @@ def sign_out(conn, customer):
             cur.close()
             return True, CMD_EXECUTION_SUCCESS
         except:
+            conn.rollback()
             return False, CMD_EXECUTION_FAILED
     else:
         return False, CMD_EXECUTION_FAILED
