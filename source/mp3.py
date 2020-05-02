@@ -188,6 +188,7 @@ def show_plans(conn):
         sql = ("SELECT * FROM Plan")
         cur.execute(sql)
         query = query = cur.fetchall()
+        cur.close()
 
         print("#|Name|Resolution|Max Sessions|Monthly Fee")
         for row in query:
@@ -197,9 +198,6 @@ def show_plans(conn):
     except:
         return False, CMD_EXECUTION_FAILED
     
-
-    
-
 
 """
     Retrieves authenticated user's plan and prints it. 
@@ -214,8 +212,21 @@ def show_plans(conn):
 
 
 def show_subscription(conn, customer):
-    # TODO: Implement this function
-    return False, CMD_EXECUTION_FAILED
+    #cursor
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT * FROM Plan WHERE plan_id = %s", [customer.plan_id])
+        query = cur.fetchone()
+
+        print("#|Name|Resolution|Max Sessions|Monthly Fee")
+        print(str(query[0])+ "|" + str(query[1]) + "|" + str(query[2]) + "|" + str(query[3]) + "|" + str(query[4]))
+
+        cur.close()
+
+        return True, CMD_EXECUTION_SUCCESS
+    except:
+        return False, CMD_EXECUTION_FAILED
+    
 
 """
     Insert customer-movie relationships to Watched table if not exists in Watched table.
