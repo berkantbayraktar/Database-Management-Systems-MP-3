@@ -256,8 +256,44 @@ def show_subscription(conn, customer):
 
 
 def watched_movies(conn, customer, movie_ids):
-    # TODO: Implement this function
-    return False, CMD_EXECUTION_FAILED
+    #cursor
+    cur = conn.cursor()
+    try:
+        for movie_id in movie_ids:
+            cur.execute("SELECT * FROM Movies WHERE movie_id = %s",(movie_id,))
+            query = cur.fetchone()
+            if query == None: # check one of the movie ids is incorrect or not. If it is , rollback and return
+                conn.rollback()
+                return False, CMD_EXECUTION_FAILED
+    except:
+        conn.rollback()
+        return False, CMD_EXECUTION_FAILED
+
+    new_movie_ids = list()
+    #compare given movie_ids with already in database. If the given movie id does not exists in database, add it to new_movie_ids list
+    try:
+        for movie_id in movie_ids: 
+            cur.execute("SELECT * FROM Watched WHERE movie_id = %s",(movie_id,))
+            query = cur.fetchone()
+            if query == None:
+                new_movie_ids.append(movie_id)
+    except:
+        conn.rollback()
+        return False, CMD_EXECUTION_FAILED
+    
+    if not new_movie_ids: # all movies are already watched do nothing and return success message
+        conn.rollback()
+        return True, CMD_EXECUTION_SUCCESS
+
+    try:
+        for new_movie_id in new_movie_ids:
+            cur.execute("INSERT INTO Watched VALUES (%s,%s)",(customer.customer_id,new_movie_id))
+    except:
+        conn.rollback()
+        return False, CMD_EXECUTION_FAILED
+    
+    conn.commit()
+    return True, CMD_EXECUTION_SUCCESS
 
 
 """
@@ -277,15 +313,10 @@ def subscribe(conn, customer, plan_id):
     try: 
         cur.execute("SELECT * FROM Plan WHERE plan_id= %s",[customer.plan_id])
         query = cur.fetchone()
+        old_max_parallel_sessions = query[3]
     except: 
         conn.rollback()
         return None, CMD_EXECUTION_FAILED
-
-    try:
-        old_max_parallel_sessions = query[3]
-    except:
-        return None, CMD_EXECUTION_FAILED
-
     
     try: 
         cur.execute("SELECT * FROM Plan WHERE plan_id= %s",[plan_id])
