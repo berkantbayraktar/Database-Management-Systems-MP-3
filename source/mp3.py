@@ -181,8 +181,24 @@ def quit(conn, customer):
 
 
 def show_plans(conn):
-    # TODO: Implement this function
-    return False, CMD_EXECUTION_FAILED
+    #cursor
+    cur = conn.cursor()
+    
+    try:
+        sql = ("SELECT * FROM Plan")
+        cur.execute(sql)
+        query = query = cur.fetchall()
+
+        print("#|Name|Resolution|Max Sessions|Monthly Fee")
+        for row in query:
+            print(str(row[0])+ "|" + str(row[1]) + "|" + str(row[2]) + "|" + str(row[3]) + "|" + str(row[4]))        
+        return True, CMD_EXECUTION_SUCCESS
+
+    except:
+        return False, CMD_EXECUTION_FAILED
+    
+
+    
 
 
 """
