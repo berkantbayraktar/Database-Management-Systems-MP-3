@@ -371,15 +371,17 @@ def search_for_movies(conn, customer, search_text):
         ["%"+search_text + "%"])
         query = cur.fetchall()
     except:
+        conn.rollback()
         return False, CMD_EXECUTION_FAILED
 
     print("Id|Title|Year|Rating|Votes|Watched")
     for row in query:
         if(row[5] == customer.customer_id):
-            print(str(row[0]) + "|" + str(row[1]) + "|" + str(row[2]) + "|" + str(row[3]) + "|" + str(row[4]) + "|" + str(1)) 
-        else:
+            print(str(row[0]) + "|" + str(row[1]) + "|" + str(row[2]) + "|" + str(row[3]) + "|" + str(row[4]) + "|" + str(1))
+        elif(row[5] == None): 
             print(str(row[0]) + "|" + str(row[1]) + "|" + str(row[2]) + "|" + str(row[3]) + "|" + str(row[4]) + "|" + str(0)) 
-    
+        else:
+            continue
     return True, CMD_EXECUTION_SUCCESS
 """
     Suggests combination of these movies:
