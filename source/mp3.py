@@ -273,7 +273,7 @@ def watched_movies(conn, customer, movie_ids):
     #compare given movie_ids with already in database. If the given movie id does not exists in database, add it to new_movie_ids list
     try:
         for movie_id in movie_ids: 
-            cur.execute("SELECT * FROM Watched WHERE movie_id = %s",(movie_id,))
+            cur.execute("SELECT * FROM Watched WHERE customer_id = %s and movie_id = %s",(customer.customer_id,movie_id))
             query = cur.fetchone()
             if query == None:
                 new_movie_ids.append(movie_id)
@@ -375,10 +375,10 @@ def search_for_movies(conn, customer, search_text):
 
     print("Id|Title|Year|Rating|Votes|Watched")
     for row in query:
-        if(row[5] == None):
-            print(str(row[0]) + "|" + str(row[1]) + "|" + str(row[2]) + "|" + str(row[3]) + "|" + str(row[4]) + "|" + str(0)) 
-        else:
+        if(row[5] == customer.customer_id):
             print(str(row[0]) + "|" + str(row[1]) + "|" + str(row[2]) + "|" + str(row[3]) + "|" + str(row[4]) + "|" + str(1)) 
+        else:
+            print(str(row[0]) + "|" + str(row[1]) + "|" + str(row[2]) + "|" + str(row[3]) + "|" + str(row[4]) + "|" + str(0)) 
     
     return True, CMD_EXECUTION_SUCCESS
 """
