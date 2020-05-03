@@ -364,10 +364,23 @@ def subscribe(conn, customer, plan_id):
 
 
 def search_for_movies(conn, customer, search_text):
-    # TODO: Implement this function
-    return False, CMD_EXECUTION_FAILED
+    #cursor
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT * FROM Movies m LEFT JOIN Watched w ON m.movie_id = w.movie_id WHERE title ILIKE %s ORDER BY m.movie_id", 
+        ["%"+search_text + "%"])
+        query = cur.fetchall()
+    except:
+        return False, CMD_EXECUTION_FAILED
 
-
+    print("Id|Title|Year|Rating|Votes|Watched")
+    for row in query:
+        if(row[5] == None):
+            print(str(row[0]) + "|" + str(row[1]) + "|" + str(row[2]) + "|" + str(row[3]) + "|" + str(row[4]) + "|" + str(0)) 
+        else:
+            print(str(row[0]) + "|" + str(row[1]) + "|" + str(row[2]) + "|" + str(row[3]) + "|" + str(row[4]) + "|" + str(1)) 
+    
+    return True, CMD_EXECUTION_SUCCESS
 """
     Suggests combination of these movies:
         1- Find customer's genres. For each genre, find movies with most number of votes among the movies that the customer didn't watch.
