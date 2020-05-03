@@ -404,5 +404,74 @@ def search_for_movies(conn, customer, search_text):
 
 
 def suggest_movies(conn, customer):
-    # TODO: Implement this function
-    return False, CMD_EXECUTION_FAILED
+    #cursor
+    cur = conn.cursor()
+    sql =   """
+select *
+from
+((SELECT DISTINCT m.movie_id,
+                m.title,
+                m.movie_year,
+                m.rating,
+                m.votes
+FROM   movies m,
+       genres g,
+       (SELECT g.genre_name,
+               Max(not_watched.votes) AS max_votes
+        FROM   genres g,
+               (SELECT *
+                FROM   movies m
+                WHERE  m.movie_id NOT IN (SELECT w.movie_id
+                                          FROM   watched w
+                                          WHERE  w.customer_id = %s)) AS
+               not_watched,
+               (SELECT DISTINCT g.genre_name AS genre_name
+                FROM   watched w,
+                       genres g
+                WHERE  w.movie_id = g.movie_id
+                       AND w.customer_id = %s) AS watched_genres
+        WHERE  not_watched.movie_id = g.movie_id
+               AND g.genre_name = watched_genres.genre_name
+        GROUP  BY g.genre_name) AS notwatched_maxvotes
+WHERE  m.movie_id = g.movie_id
+       AND g.genre_name = notwatched_maxvotes.genre_name
+       AND m.votes = notwatched_maxvotes.max_votes)  
+union 
+(SELECT *
+FROM   movies m
+WHERE  m.movie_year >= '2010'
+       AND m.movie_id NOT IN (SELECT w.movie_id
+                              FROM   watched w
+                              WHERE  w.customer_id = %s)
+ORDER  BY m.votes DESC,
+          m.votes DESC
+LIMIT  10)  
+union 
+(SELECT m.movie_id,
+       m.title,
+       m.movie_year,
+       m.rating,
+       m.votes
+FROM   movies m
+WHERE  m.movie_id NOT IN (SELECT w.movie_id
+                          FROM   watched w
+                          WHERE  w.customer_id = %s)
+       AND m.votes > (SELECT Avg(m.votes)
+                      FROM   movies m,
+                             watched w
+                      WHERE  m.movie_id = w.movie_id
+                             AND w.customer_id = %s)
+ORDER  BY m.votes desc)) as t
+order by t.movie_id asc """
+
+    try:
+        cur.execute(sql,(customer.customer_id,customer.customer_id,customer.customer_id,customer.customer_id,customer.customer_id))
+        query = cur.fetchall()
+    except:
+        return False, CMD_EXECUTION_FAILED
+
+    print("Id|Title|Year|Rating|Votes")
+    for row in query:
+        print(str(row[0]) + "|" + str(row[1]) + "|" + str(row[2]) + "|" + str(row[3]) + "|" + str(row[4]))
+
+    return True, CMD_EXECUTION_SUCCESS
