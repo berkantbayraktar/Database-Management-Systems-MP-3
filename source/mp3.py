@@ -180,7 +180,12 @@ def sign_out(conn, customer):
 
 def quit(conn, customer):
     # TODO: Implement this function
-    return False, CMD_EXECUTION_FAILED
+    try:
+        sign_out(conn,customer)
+        return True, CMD_EXECUTION_SUCCESS
+    except:
+        return False, CMD_EXECUTION_FAILED
+    
 
 
 """
